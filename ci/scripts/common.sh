@@ -45,6 +45,16 @@ function error() {
   exit 1
 }
 
+function check_if_exists(){
+  ERROR_MSG=$1
+  CONTENT=$2
+
+  if [[ -z "$CONTENT" ]] || [[ "$CONTENT" == "null" ]]; then
+    echo $ERROR_MSG
+    exit 1
+  fi
+}
+
 function apply_changes() {
   product_guid="$(get_product_guid)"
 
