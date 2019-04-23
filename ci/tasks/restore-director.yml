@@ -1,0 +1,19 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bonzofenix/ci-tools
+    version: v0.1.6
+
+params:
+
+inputs:
+- name: pipeline
+- name: directorbackup
+
+outputs:
+
+run:
+  path: pipeline/ci/scripts/restore-director.sh

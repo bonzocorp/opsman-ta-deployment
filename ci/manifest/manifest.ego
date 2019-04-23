@@ -1,0 +1,458 @@
+<%! func ManifestTmpl(w io.Writer, config Config) error %>
+<%% import . "github.com/compozed/travel-agent/models" %%>
+---
+meta:
+  pipeline:
+    uri: https://github.com/bonzofenix/opsman-ta-deployment
+
+  git:
+    username: (( param "git username for ci bot commits when upgrading secrets" ))
+    email: (( param "git email for ci bot commits when upgrading secrets" ))
+
+<% if config.HasFeature("slack_updates") { %>
+  slack_updates:
+    uri: (( param "Slack integration webhook uri" ))
+<% } %>
+
+<% for _, env := range config.Envs { %>
+  <%= env.Name %>_om_config: &<%= env.Name %>_om_config
+    OM_TARGET:              ((grab meta.<%= env.Name %>.om_target))
+    OM_USERNAME:            ((grab meta.<%= env.Name %>.om_username))
+    OM_PASSWORD:            ((grab meta.<%= env.Name %>.om_password))
+    OM_DECRYPTION_PASSWORD: ((grab meta.<%= env.Name %>.om_decryption_password))
+    OM_SKIP_SSL_VALIDATION: ((grab meta.<%= env.Name %>.om_skip_ssl_validation || false))
+    OM_TRACE:               ((grab meta.<%= env.Name %>.om_trace || false))
+    DRY_RUN:                ((grab meta.<%= env.Name %>.dry_run || false))
+    DEBUG:                  ((grab meta.<%= env.Name %>.debug || false))
+
+    CUSTOM_ROOT_CA:                 ((grab meta.<%= env.Name %>.custom_root_ca || ""))
+    CUSTOM_INTERMEDIATE_CA:         ((grab meta.<%= env.Name %>.custom_intermediate_ca || ""))
+
+  <%= env.Name %>_upgrade_dependencies: &<%= env.Name %>_upgrade_dependencies
+  <% if env.HasDependencies() { %>
+    passed:
+      <% for _, dependency := range env.DependsOn { %>
+      - <%= dependency %>-upgrade
+      <% } %>
+  <% } else { %>
+    passed: []
+  <% } %>
+  <%= env.Name %>_update_dependencies: &<%= env.Name %>_update_dependencies
+  <% if env.HasDependencies() { %>
+    passed:
+      <% for _, dependency := range env.DependsOn { %>
+      - <%= dependency %>-update
+      <% } %>
+  <% } else { %>
+    passed: []
+  <% } %>
+<% } %>
+
+groups:
+- name: upgrade
+  jobs:
+<% if config.HasFeature("pin_versions") { %>
+  - pin-resources
+<% } %>
+<% for _, env := range config.Envs { %>
+  - <%= env.Name %>-upgrade
+<% } %>
+
+<% if config.HasFeature("slack_updates") { %>
+  - ova-updates
+<% } %>
+
+<% if config.HasFeature("update_deployment") { %>
+- name: update
+  jobs:
+<% for _, env := range config.Envs { %>
+  - <%= env.Name %>-update
+<% } %>
+<% } %>
+
+- name: backup
+  jobs:
+<% for _, env := range config.Envs { %>
+  <% if env.HasFeature("backup") { %>
+  - <%= env.Name %>-backup
+  - <%= env.Name %>-cleanup
+  <% } %>
+<% } %>
+
+- name: restore
+  jobs:
+<% for _, env := range config.Envs { %>
+  <% if env.HasFeature("restore") { %>
+  - <%= env.Name %>-restore
+  <% } %>
+<% } %>
+
+jobs:
+<% if config.HasFeature("slack_updates") { %>
+- name: ova-updates
+  plan:
+  - get: <%= config.Name %>-ova
+    params:
+      globs: []
+    trigger: true
+    on_success:
+      put: notify
+      params:
+        channel:  (( grab meta.slack_updates.channel ))
+        username: (( grab meta.slack_updates.username ))
+        icon_url: (( grab meta.slack_updates.icon_url ))
+        text: "New <%= config.Name %> tile available"
+<% } %>
+
+<% if config.HasFeature("pin_versions") { %>
+- name: pin-resources
+  plan:
+  - aggregate:
+    - get: pipeline
+    - get: config
+      resource: <%= config.Name %>-pins
+      trigger: true
+  - task: run
+    file: pipeline/ci/tasks/pin-resources.yml
+    params:
+      CUSTOM_ROOT_CA:                 (( grab meta.custom_root_ca || "" ))
+
+      CUSTOM_INTERMEDIATE_CA:         (( grab meta.custom_intermediate_ca || "" ))
+      DEBUG:              (( grab meta.debug || false ))
+      PIPELINE_NAME:      <%= config.Name %>
+      PINS_FILE:          (( grab meta.pins_file ))
+      CONCOURSE_TARGET:   (( grab meta.concourse.target ))
+      CONCOURSE_USERNAME: (( grab meta.concourse.user ))
+      CONCOURSE_PASSWORD: (( grab meta.concourse.password ))
+      CONCOURSE_TEAM:     (( grab meta.concourse.team ))
+<% } %>
+<% for _, env := range config.Envs { %>
+- name: <%= env.Name %>-upgrade
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+      <<: *<%= env.Name %>_upgrade_dependencies
+    - get: ova
+      params:
+        globs: [ "*.ova" ]
+      <<: *<%= env.Name %>_upgrade_dependencies
+    - get: config
+      resource: <%= env.Name %>-config
+    - get: metadata
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+
+  <% if env.HasFeature("backup") { %>
+  - task: backup-opsman
+    file: pipeline/ci/tasks/backup-opsman.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+    on_success:
+      put: <%= env.Name %>-opsman-s3-backup
+      params:
+        file: output/om-installation.zip
+  - task: backup-director
+    file: pipeline/ci/tasks/backup-director.yml
+    params:
+      DEBUG:       ((grab meta.<%= env.Name %>.debug || false))
+      BOSH_TARGET: (( grab meta.<%= env.Name %>.director.uri ))
+      BBR_SSH_KEY: (( grab meta.<%= env.Name %>.director.bbr_ssh_key ))
+    on_success:
+      put: <%= env.Name %>-director-s3-backup
+      params:
+        file: output/director.tgz
+    on_failure:
+      task: cleanup-director
+      file: pipeline/ci/tasks/cleanup-director.yml
+      params:
+        DEBUG:       ((grab meta.<%= env.Name %>.debug || false))
+        BBR_SSH_KEY: (( grab meta.<%= env.Name %>.director.bbr_ssh_key ))
+        BOSH_TARGET: (( grab meta.<%= env.Name %>.director.uri ))
+  <% } %>
+
+  - task: upgrade-opsman
+    file: pipeline/ci/tasks/deploy-opsman.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      CONFIG_FILES: (( grab meta.<%= env.Name %>.config_files ))
+      VAULT_ADDR:   (( grab meta.vault.address ))
+      VAULT_TOKEN:  (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      GOVC_URL:    (( grab meta.<%= env.Name %>.govc_url ))
+      GOVC_HOST:    (( grab meta.<%= env.Name %>.govc_host || "" ))
+      GOVC_NETWORK: (( grab meta.<%= env.Name %>.govc_network || "" ))
+      GOVC_INSECURE: (( grab meta.<%= env.Name %>.govc_insecure || false ))
+      GOVC_CA_CERT:  (( grab meta.<%= env.Name %>.govc_ca_cert || "" ))
+      GOVC_USERNAME: (( grab meta.<%= env.Name %>.govc_username ))
+      GOVC_PASSWORD: (( grab meta.<%= env.Name %>.govc_password ))
+      GOVC_DATACENTER: (( grab meta.<%= env.Name %>.govc_datacenter ))
+      GOVC_DATASTORE:  (( grab meta.<%= env.Name %>.govc_datastore ))
+      GOVC_RESOURCE_POOL: (( grab meta.<%= env.Name %>.govc_resource_pool || "" ))
+      GOVC_CLUSTER: (( grab meta.<%= env.Name %>.govc_cluster || "" ))
+      GOVC_FOLDER: (( grab meta.<%= env.Name %>.govc_folder || "" ))
+      SSHPASS: (( grab meta.<%= env.Name %>.om_ssh_password ))
+      OM_CERT: (( grab meta.<%= env.Name %>.om_cert || "" ))
+      OM_CERT_KEY: (( grab meta.<%= env.Name %>.om_cert_key || "" ))
+      PIVNET_TOKEN:   (( grab meta.pivnet_token ))
+      IAAS_TYPE: (( grab meta.iaas_type ))
+      SKIP_APPLY_CHANGES: (( grab meta.skip_apply_changes || false ))
+  - task: deploy-director
+    file: pipeline/ci/tasks/deploy-director.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
+      DIRECTOR_CONFIG:     (( grab meta.<%= env.Name %>.director_config ))
+      STORE_FILE:          (( grab meta.<%= env.Name %>.store_file ))
+      YAML2VAULT_PREFIX:   (( grab meta.<%= env.Name %>.yaml2vault_prefix ))
+
+  ensure: &<%= env.Name %>-ensure
+    put: config
+    resource: <%= env.Name %>-config
+    params:
+      repository: config-mod
+      rebase: true
+    on_success:
+      put: lock
+      params:
+        release: lock
+
+- name: <%= env.Name %>-update
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+      <<: *<%= env.Name %>_update_dependencies
+    - get: config
+      resource: <%= env.Name %>-config
+    - get: metadata
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: deploy-director
+    file: pipeline/ci/tasks/deploy-director.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
+      DIRECTOR_CONFIG:     (( grab meta.<%= env.Name %>.director_config ))
+      STORE_FILE:          (( grab meta.<%= env.Name %>.store_file ))
+      YAML2VAULT_PREFIX:   (( grab meta.<%= env.Name %>.yaml2vault_prefix ))
+
+  ensure: &<%= env.Name %>-ensure
+    put: config
+    resource: <%= env.Name %>-config
+    params:
+      repository: config-mod
+      rebase: true
+    on_success:
+      put: lock
+      params:
+        release: lock
+
+
+<% if env.HasFeature("backup") { %>
+- name: <%= env.Name %>-backup
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+    <% if env.HasFeature("backup-daily") { %>
+    - trigger: true
+      get: every-day
+    <% } %>
+    - get: config
+      resource: <%= env.Name %>-config
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: backup-opsman
+    file: pipeline/ci/tasks/backup-opsman.yml
+    on_success:
+      put: <%= env.Name %>-opsman-s3-backup
+      params:
+        file: output/om-installation.zip
+    params:
+      <<: *<%= env.Name %>_om_config
+  - task: backup-director
+    file: pipeline/ci/tasks/backup-director.yml
+    params:
+      DEBUG:       ((grab meta.<%= env.Name %>.debug || false))
+      BOSH_TARGET: (( grab meta.<%= env.Name %>.director.uri ))
+      BBR_SSH_KEY: (( grab meta.<%= env.Name %>.director.bbr_ssh_key ))
+    on_success:
+      put: <%= env.Name %>-director-s3-backup
+      params:
+        file: output/director.tgz
+    on_failure:
+      task: cleanup-pcf-director
+      file: pipeline/ci/tasks/cleanup-director.yml
+      params:
+        DEBUG:       ((grab meta.<%= env.Name %>.debug || false))
+        BOSH_TARGET: (( grab meta.<%= env.Name %>.director.uri ))
+        BBR_SSH_KEY: (( grab meta.<%= env.Name %>.director.bbr_ssh_key ))
+  ensure:
+    put: lock
+    params:
+      release: lock
+
+- name: <%= env.Name %>-cleanup
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: cleanup-pcf-director
+    file: pipeline/ci/tasks/cleanup-director.yml
+    params:
+      DEBUG:       ((grab meta.<%= env.Name %>.debug || false))
+      BOSH_TARGET: (( grab meta.<%= env.Name %>.director.uri ))
+      BBR_SSH_KEY: (( grab meta.<%= env.Name %>.director.bbr_ssh_key ))
+  ensure:
+    put: lock
+    params:
+      release: lock
+<% } %>
+
+<% if env.HasFeature("restore") { %>
+- name: <%= env.Name %>-restore
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+    - get: config
+      resource: <%= env.Name %>-config
+    - get: opsman-backup
+      resource: <%= env.Name %>-opsman-s3-backup
+      params:
+        unpack: true
+    - get: director-backup
+      resource: <%= env.Name %>-director-s3-backup
+      params:
+        unpack: true
+  - file: pipeline/ci/tasks/restore-opsman.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+    task: restore
+  - file: pipeline/ci/tasks/restore-director.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+    task: restore
+  ensure:
+    put: lock
+    params:
+      release: lock
+<% } %>
+<% } %>
+
+resources:
+- name: ova
+  type: pivnet
+  source:
+    api_token:    (( grab meta.pivnet_token ))
+    product_slug: (( grab meta.product_slug ))
+    sort_by: semver
+
+- name: pipeline
+  type: git
+  source:
+    branch:      (( grab meta.pipelines.branch || "master" ))
+    private_key: (( grab meta.pipelines.private_key ))
+    uri:         (( grab meta.pipelines.uri ))
+
+- name: lock
+  type: pool
+  source:
+    uri:         (( grab meta.locks.uri ))
+    branch:      (( grab meta.locks.branch || "master" ))
+    private_key: (( grab meta.locks.private_key ))
+    pool:        (( grab meta.locks.pool ))
+
+- name: metadata
+  type: build-metadata
+
+<% for _, env := range config.Envs { %>
+- name: <%= env.Name %>-config
+  type: git
+  source:
+    paths:
+    - default/<%= config.Name %>
+    - <%= env.Name %>/<%= config.Name %>
+    - <%= env.Name %>/director
+    branch:      (( grab meta.configs.branch || "master" ))
+    private_key: (( grab meta.configs.private_key ))
+    uri:         (( grab meta.configs.uri ))
+
+<% if (env.HasFeature("backup") || env.HasFeature("restore")) { %>
+- name: <%= env.Name %>-opsman-s3-backup
+  source:
+    bucket:            (( grab meta.<%= env.Name %>.s3.bucket ))
+    versioned_file:    <%= env.Name %>/<%= config.Name %>/om-installation.zip
+    access_key_id:     (( grab meta.<%= env.Name %>.s3.access_key_id ))
+    secret_access_key: (( grab meta.<%= env.Name %>.s3.secret_access_key ))
+  type: s3
+- name: <%= env.Name %>-director-s3-backup
+  source:
+    bucket:            (( grab meta.<%= env.Name %>.s3.bucket ))
+    versioned_file:    <%= env.Name %>/<%= config.Name %>/director.tgz
+    access_key_id:     (( grab meta.<%= env.Name %>.s3.access_key_id ))
+    secret_access_key: (( grab meta.<%= env.Name %>.s3.secret_access_key ))
+  type: s3
+<% } %>
+<% } %>
+
+<% if env.HasFeature("backup-daily") { %>
+- name: <%= env.Name %>-every-day
+  type: time
+  source:
+    interval: 24h
+<% } %>
+
+<% if config.HasFeature("pin_versions") { %>
+- name: <%= config.Name %>-pins
+  type: git
+  source:
+    paths:
+    - default/<%= config.Name %>/pins.yml
+    branch:      (( grab meta.configs.branch || "master" ))
+    private_key: (( grab meta.configs.private_key ))
+    uri:         (( grab meta.configs.uri ))
+<% } %>
+
+
+<% if config.HasFeature("slack_updates") { %>
+- name: <%= config.Name %>-ova
+  type: pivnet
+  source:
+    api_token:    (( grab meta.pivnet_token ))
+    product_slug: (( grab meta.product_slug ))
+    sort_by: semver
+
+- name: notify
+  type: slack-notification
+  source:
+    url: (( grab meta.slack_updates.uri || "" ))
+<% } %>
+
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+- name: build-metadata
+  type: docker-image
+  source:
+    repository: mastertinner/build-metadata-resource
+

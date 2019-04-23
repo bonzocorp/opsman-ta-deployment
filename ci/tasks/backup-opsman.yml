@@ -1,0 +1,34 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bonzofenix/ci-tools
+    version: v0.1.6
+
+params:
+  DEBUG:
+  OM_TARGET:
+  OM_CLIENT_ID:
+  OM_CLIENT_SECRET:
+  OM_USERNAME:
+  OM_PASSWORD:
+  OM_SKIP_SSL_VALIDATION: false
+  OM_REQUEST_TIMEOUT: 3600
+  BOSH_TARGET:
+  BOSH_CLIENT:
+  BOSH_CLIENT_SECRET:
+  BOSH_CA_CERT:
+  PAS_DEPLOYMENT_NAME:
+  BBR_USERNAME: bbr
+  BBR_SSH_KEY:
+
+inputs:
+  - name: pipeline
+
+outputs:
+  - name: output
+
+run:
+  path: pipeline/ci/scripts/backup-opsman.sh

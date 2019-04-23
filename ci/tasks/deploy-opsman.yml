@@ -1,0 +1,19 @@
+---
+
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bonzofenix/ci-tools
+    tag: edge
+
+params:
+
+inputs:
+  - name: ova
+  - name: pipeline
+  - name: config
+
+run:
+  path: pipeline/ci/scripts/deploy-opsman.sh

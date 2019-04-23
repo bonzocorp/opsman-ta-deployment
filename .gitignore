@@ -1,0 +1,35 @@
+# Environments
+.env
+.envrc
+.secrets.*
+
+##
+# OS Files
+##
+
+# Mac OS
+.DS_Store
+._*
+.Trashes/
+
+# Linux
+*~
+*.swp
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+
+##
+# Ignored extensions
+##
+
+*.out
+*.bak
+*.log
+*.tmp
+*.tgz
+*.zip

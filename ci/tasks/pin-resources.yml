@@ -1,0 +1,16 @@
+
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bonzofenix/ci-tools
+    tag: edge
+
+inputs:
+  - name: config
+  - name: pipeline
+
+run:
+  path: pipeline/ci/scripts/pin-resources.sh
