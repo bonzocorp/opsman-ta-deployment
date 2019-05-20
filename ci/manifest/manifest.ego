@@ -2,8 +2,8 @@
 <%% import . "github.com/compozed/travel-agent/models" %%>
 ---
 meta:
-  pipeline:
-    uri: https://github.com/bonzofenix/opsman-ta-deployment
+  pipelines:
+    uri: https://github.com/bonzofenix/opsman-ta-deployment.git
 
   git:
     username: (( param "git username for ci bot commits when upgrading secrets" ))
@@ -25,8 +25,8 @@ meta:
     DRY_RUN:                ((grab meta.<%= env.Name %>.dry_run || false))
     DEBUG:                  ((grab meta.<%= env.Name %>.debug || false))
 
-    CUSTOM_ROOT_CA:                 ((grab meta.<%= env.Name %>.custom_root_ca || ""))
-    CUSTOM_INTERMEDIATE_CA:         ((grab meta.<%= env.Name %>.custom_intermediate_ca || ""))
+    CUSTOM_ROOT_CA:                 ((grab meta.custom_root_ca || ""))
+    CUSTOM_INTERMEDIATE_CA:         ((grab meta.custom_intermediate_ca || ""))
 
   <%= env.Name %>_upgrade_dependencies: &<%= env.Name %>_upgrade_dependencies
   <% if env.HasDependencies() { %>
@@ -153,6 +153,7 @@ jobs:
       put: <%= env.Name %>-opsman-s3-backup
       params:
         file: output/om-installation.zip
+
   - task: backup-director
     file: pipeline/ci/tasks/backup-director.yml
     params:
@@ -221,6 +222,7 @@ jobs:
       params:
         release: lock
 
+<% if config.HasFeature("update_deployment") { %>
 - name: <%= env.Name %>-update
   serial: true
   plan:
@@ -256,6 +258,7 @@ jobs:
       params:
         release: lock
 
+<% } %>
 
 <% if env.HasFeature("backup") { %>
 - name: <%= env.Name %>-backup
@@ -368,7 +371,6 @@ resources:
   type: git
   source:
     branch:      (( grab meta.pipelines.branch || "master" ))
-    private_key: (( grab meta.pipelines.private_key ))
     uri:         (( grab meta.pipelines.uri ))
 
 - name: lock
@@ -410,7 +412,6 @@ resources:
     secret_access_key: (( grab meta.<%= env.Name %>.s3.secret_access_key ))
   type: s3
 <% } %>
-<% } %>
 
 <% if env.HasFeature("backup-daily") { %>
 - name: <%= env.Name %>-every-day
@@ -418,6 +419,8 @@ resources:
   source:
     interval: 24h
 <% } %>
+<% } %>
+
 
 <% if config.HasFeature("pin_versions") { %>
 - name: <%= config.Name %>-pins
