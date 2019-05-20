@@ -10,6 +10,7 @@ image_resource:
 
 params:
   OM_SKIP_SSL_VALIDATION: false
+  OM_TRACE: false
 
 inputs:
   - name: pipeline
