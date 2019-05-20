@@ -2,6 +2,7 @@
 
 [[ ${DEBUG,,} == true ]] && set -x
 set -eu
+set -x
 
 source pipeline/ci/scripts/common.sh
 
