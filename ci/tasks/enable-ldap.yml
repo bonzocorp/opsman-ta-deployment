@@ -9,6 +9,11 @@ image_resource:
     tag: edge
 
 params:
+  OM_TARGET:
+  OM_CLIENT_ID:
+  OM_CLIENT_SECRET:
+  OM_USERNAME:
+  OM_PASSWORD:
   OM_SKIP_SSL_VALIDATION: false
   OM_TRACE: false
 
