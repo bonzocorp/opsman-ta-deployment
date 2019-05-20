@@ -87,6 +87,14 @@ groups:
   <% } %>
 <% } %>
 
+- name: ldap
+  jobs:
+<% for _, env := range config.Envs { %>
+  <% if env.HasFeature("enable_ldap") { %>
+  - <%= env.Name %>-enable-ldap
+  <% } %>
+<% } %>
+
 jobs:
 <% if config.HasFeature("slack_updates") { %>
 - name: ova-updates
@@ -352,6 +360,38 @@ jobs:
     params:
       <<: *<%= env.Name %>_om_config
     task: restore
+  ensure:
+    put: lock
+    params:
+      release: lock
+<% } %>
+
+<% if env.HasFeature("enable_ldap") { %>
+- name: <%= env.Name %>-enable-ldap
+  serial: true
+  plan:
+  - aggregate:
+    - get: pipeline
+    - get: config
+      resource: <%= env.Name %>-config
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: enable-ldap
+    file: pipeline/ci/tasks/enable-ldap.yml
+    params:
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false))
+      EULA_ACCEPTED:              (( grab meta.<%= env.Name %>.om_eula_accepted || false ))
+      LDAP_SERVER_URL:            (( grab meta.<%= env.Name %>.ldap_config.ldap_server_url ))
+      LDAP_USERNAME:              (( grab meta.<%= env.Name %>.ldap_config.ldap_username ))
+      LDAP_PASSWORD:              (( grab meta.<%= env.Name %>.ldap_config.ldap_password ))
+      LDAP_USER_SEARCH_BASE:      (( grab meta.<%= env.Name %>.ldap_config.ldap_user_search_base ))
+      LDAP_SEARCH_FILTER:         (( grab meta.<%= env.Name %>.ldap_config.ldap_search_filter ))
+      LDAP_GROUP_SEARCH_BASE:     (( grab meta.<%= env.Name %>.ldap_config.ldap_group_search_base ))
+      LDAP_GROUP_SEARCH_FILTER:   (( grab meta.<%= env.Name %>.ldap_config.ldap_group_search_filter ))
+      LDAP_RBAC_ADMIN_GROUP_NAME: (( grab meta.<%= env.Name %>.ldap_config.ldap_rbac_admin_group_name ))
+      LDAP_EMAIL_ATTRIBUTE:       (( grab meta.<%= env.Name %>.ldap_config.ldap_email_attribute ))
+      LDAP_REFERRALS:             (( grab meta.<%= env.Name %>.ldap_config.ldap_referrals ))
   ensure:
     put: lock
     params:
