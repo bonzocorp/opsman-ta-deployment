@@ -11,9 +11,9 @@ function configure_ldap() {
     $om_options \
     curl \
       --path /api/v0/setup \
-      -X POST \
-      -H "Content-Type: application/json" \
-      -d '{ "setup": {
+      --request POST \
+      --header "Content-Type: application/json" \
+      --data '{ "setup": {
         "identity_provider": "ldap",
         "decryption_passphrase": "$OM_DECRYPTION_PASSWORD",
         "decryption_passphrase_confirmation":"$OM_DECRYPTION_PASSWORD",

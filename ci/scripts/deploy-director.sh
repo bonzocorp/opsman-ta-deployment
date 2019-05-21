@@ -15,6 +15,7 @@ fi
 if [[ $OM_TRACE == true ]]; then
   om_options+=" --trace"
 fi
+
 om_options+=" --request-timeout ${OM_REQUEST_TIMEOUT:-3600}"
 
 OUTPUT=output

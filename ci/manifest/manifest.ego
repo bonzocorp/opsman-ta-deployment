@@ -380,7 +380,17 @@ jobs:
   - task: enable-ldap
     file: pipeline/ci/tasks/enable-ldap.yml
     params:
-      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false))
+      OM_TARGET:                  (( grab meta.<%= env.Name %>.om_target ))
+      OM_USERNAME:                (( grab meta.<%= env.Name %>.om_username ))
+      OM_PASSWORD:                (( grab meta.<%= env.Name %>.om_password ))
+      OM_DECRYPTION_PASSWORD:     (( grab meta.<%= env.Name %>.om_decryption_password ))
+      OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
+      OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
+      DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
+      CUSTOM_ROOT_CA:             (( grab meta.custom_root_ca || "" ))
+      CUSTOM_INTERMEDIATE_CA:     (( grab meta.custom_intermediate_ca || "" ))
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
       EULA_ACCEPTED:              (( grab meta.<%= env.Name %>.om_eula_accepted || false ))
       LDAP_SERVER_URL:            (( grab meta.<%= env.Name %>.ldap_config.ldap_server_url ))
       LDAP_USERNAME:              (( grab meta.<%= env.Name %>.ldap_config.ldap_username ))
