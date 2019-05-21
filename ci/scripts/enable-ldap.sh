@@ -33,4 +33,5 @@ function configure_ldap() {
       } }'
 }
 
+load_custom_ca_certs
 configure_ldap
