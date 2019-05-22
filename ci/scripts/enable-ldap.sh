@@ -53,5 +53,5 @@ function configure_ldap() {
 }
 
 load_custom_ca_certs
-enable_ldap
+#enable_ldap
 configure_ldap
