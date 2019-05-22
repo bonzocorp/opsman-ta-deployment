@@ -6,6 +6,17 @@ set -x
 
 source pipeline/ci/scripts/common.sh
 
+function enable_ldap() {
+
+  om -t $OM_TARGET \
+    $om_options \
+    curl \
+      --path /api/v0/settings/rbac \
+      --request POST \
+      --header "Content-Type: application/json" \
+      --data '{}'
+}
+
 function configure_ldap() {
   om -t $OM_TARGET \
     $om_options \
@@ -34,4 +45,5 @@ function configure_ldap() {
 }
 
 load_custom_ca_certs
+enable_ldap
 configure_ldap
