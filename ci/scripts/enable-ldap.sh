@@ -24,7 +24,7 @@ function configure_ldap() {
       --path /api/v0/setup \
       --request POST \
       --header "Content-Type: application/json" \
-      --data '{ "setup": {
+      --data '{
         "identity_provider": "ldap",
         "decryption_passphrase": "'"$OM_DECRYPTION_PASSWORD"'",
         "decryption_passphrase_confirmation": "'"$OM_DECRYPTION_PASSWORD"'",
@@ -41,7 +41,7 @@ function configure_ldap() {
           "email_attribute": "'"$LDAP_EMAIL_ATTRIBUTE"'",
           "ldap_referrals": "'"$LDAP_REFERRALS"'"
         }
-      } }'
+      }'
 
 }
 
