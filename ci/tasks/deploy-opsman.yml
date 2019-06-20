@@ -9,7 +9,6 @@ image_resource:
     tag: edge
 
 params:
-  OM_SKIP_SSL_VALIDATION: true
 
 inputs:
   - name: ova

@@ -249,6 +249,7 @@ if [[ $OM_TRACE == true ]]; then
 fi
 om_options+=" --request-timeout ${OM_REQUEST_TIMEOUT:-3600}"
 
+load_custom_ca_certs
 download_diagnostic_report
 deploy_ova
 wait_for_server

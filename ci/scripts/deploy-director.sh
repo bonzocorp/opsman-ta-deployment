@@ -146,6 +146,7 @@ om_options+=" --request-timeout ${OM_REQUEST_TIMEOUT:-3600}"
 
 trap "commit_config" EXIT
 
+load_custom_ca_certs
 generate_config
 configure_director
 if [[ "${DRY_RUN,,}" != "true" ]] ; then

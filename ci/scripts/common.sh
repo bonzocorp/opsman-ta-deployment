@@ -120,3 +120,5 @@ function get_product_guid() {
       --path /api/v0/staged/products \
   | jq -r '.[] | select(.type == "'$PRODUCT_NAME'") | .guid'
 }
+
+load_custom_ca_certs
