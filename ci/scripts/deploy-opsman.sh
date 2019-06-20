@@ -133,7 +133,7 @@ function install_settings() {
     echo "Importing installation settings"
     om \
       $om_options \
-        --decryption-passphrase "$OM_DECRYPTION_PASSWORD"
+        --decryption-passphrase "$OM_DECRYPTION_PASSWORD" \
       import-installation \
         --installation $OUTPUT/om-installation.zip \
   else
