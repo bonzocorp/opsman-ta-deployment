@@ -239,7 +239,7 @@ function apply_changes(){
       --skip-deploy-products
 }
 
-# Extra options to append to the OM command
+# Extra options to append to the OM command update
 om_options="--target $OM_TARGET"
 if [[ $OM_SKIP_SSL_VALIDATION == true ]]; then
   om_options+=" --skip-ssl-validation"
