@@ -1,0 +1,47 @@
+{
+		"Anotation": "Ops Manager for Pivotal Cloud Foundry\ninstalls and manages PCF products and services.",
+    "DiskProvisioning": "(( grab meta.opsman_disk_type || 'thin' ))",
+    "IPAllocationPolicy": "dhcpPolicy",
+    "IPProtocol": "IPv4",
+    "InjectOvfEnv": false,
+    "Name": "(( grab meta.opsman_vm_name ))",
+    "NetworkMapping": [
+        {
+            "Name": "Network 1",
+            "Network": "(( grab meta.opsman_vm_network ))"
+        }
+    ],
+    "PowerOn": "(( grab meta.opsman_power_on || true))",
+    "PropertyMapping": [
+        {
+            "Key": "ip0",
+            "Value": "(( grab meta.opsman_ip ))"
+        },
+        {
+            "Key": "netmask0",
+            "Value": "(( grab meta.opsman_netmask ))"
+        },
+        {
+            "Key": "gateway",
+            "Value": "(( grab meta.opsman_gateway ))"
+        },
+        {
+            "Key": "DNS",
+            "Value": "(( grab meta.opsman_dns_servers ))"
+        },
+        {
+            "Key": "ntp_servers",
+            "Value": "(( grab meta.opsman_ntp_servers ))"
+        },
+        {
+            "Key": "admin_password",
+            "Value": "(( grab meta.opsman_password ))"
+        },
+        {
+            "Key": "custom_hostname",
+            "Value": "(( grab meta.opsman_custom_hostname ))"
+        }
+    ],
+    "WaitForIP": false
+}
+
