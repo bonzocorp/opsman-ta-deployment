@@ -219,6 +219,9 @@ jobs:
       STORE_FILE:          (( grab meta.<%= env.Name %>.store_file ))
       YAML2VAULT_PREFIX:   (( grab meta.<%= env.Name %>.yaml2vault_prefix ))
 
+      GIT_USERNAME: (( grab meta.git.username ))
+      GIT_EMAIL: (( grab meta.git.email ))
+
   ensure: &<%= env.Name %>-ensure
     put: config
     resource: <%= env.Name %>-config
@@ -508,4 +511,10 @@ resource_types:
   type: docker-image
   source:
     repository: mastertinner/build-metadata-resource
+<% if config.HasFeature("slack_updates") { %>
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+<% } %>
 
