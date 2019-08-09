@@ -115,7 +115,7 @@ jobs:
 <% if config.HasFeature("pin_versions") { %>
 - name: pin-resources
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
     - get: config
       resource: <%= config.Name %>-pins
@@ -138,7 +138,7 @@ jobs:
 - name: <%= env.Name %>-upgrade
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
       <<: *<%= env.Name %>_upgrade_dependencies
     - get: ova
@@ -237,7 +237,7 @@ jobs:
 - name: <%= env.Name %>-update
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
       <<: *<%= env.Name %>_update_dependencies
     - get: config
@@ -275,7 +275,7 @@ jobs:
 - name: <%= env.Name %>-backup
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
     <% if env.HasFeature("backup-daily") { %>
     - trigger: true
@@ -319,7 +319,7 @@ jobs:
 - name: <%= env.Name %>-cleanup
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
     - put: lock
       params:
@@ -340,7 +340,7 @@ jobs:
 - name: <%= env.Name %>-restore
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
     - put: lock
       params:
@@ -373,7 +373,7 @@ jobs:
 - name: <%= env.Name %>-enable-ldap
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline
     - get: config
       resource: <%= env.Name %>-config
