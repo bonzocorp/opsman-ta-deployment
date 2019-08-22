@@ -253,8 +253,8 @@ load_custom_ca_certs
 download_diagnostic_report
 deploy_ova
 wait_for_server
-install_settings
 install_certs
+install_settings
 download_stemcells
 upload_stemcells
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
