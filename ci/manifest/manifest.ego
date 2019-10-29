@@ -22,6 +22,7 @@ meta:
     OM_DECRYPTION_PASSWORD: ((grab meta.<%= env.Name %>.om_decryption_password))
     OM_SKIP_SSL_VALIDATION: ((grab meta.<%= env.Name %>.om_skip_ssl_validation || false))
     OM_TRACE:               ((grab meta.<%= env.Name %>.om_trace || false))
+    OM_PRIVATE_SSH_KEY:     (( grab meta.<%= env.Name %>.om_private_ssh_key ))
     DRY_RUN:                ((grab meta.<%= env.Name %>.dry_run || false))
     DEBUG:                  ((grab meta.<%= env.Name %>.debug || false))
 
@@ -387,6 +388,7 @@ jobs:
       OM_USERNAME:                (( grab meta.<%= env.Name %>.om_username ))
       OM_PASSWORD:                (( grab meta.<%= env.Name %>.om_password ))
       OM_DECRYPTION_PASSWORD:     (( grab meta.<%= env.Name %>.om_decryption_password ))
+      OM_PRIVATE_SSH_KEY:         (( grab meta.<%= env.Name %>.om_private_ssh_key ))
       OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
       OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
       DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))

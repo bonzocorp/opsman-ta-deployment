@@ -96,14 +96,16 @@ function configure_authentication() {
 }
 
 function install_certs() {
-	ssh_command="sshpass -e ssh -t -o StrictHostKeyChecking=no ubuntu@${OM_TARGET} "
-	scp_command="sshpass -e scp -o StrictHostKeyChecking=no "
+	ssh_command="sshpass -e ssh -i /tmp/om_private_ssh_key -t -o StrictHostKeyChecking=no ubuntu@${OM_TARGET} "
+	scp_command="sshpass -e scp -i /tmp/om_private_ssh_key -o StrictHostKeyChecking=no "
 
-	if [[ -z ${OM_CERT} || -z ${OM_CERT_KEY} ]]; then
-		echo "Opsman key or cert not provided"
+	if [[ -z ${OM_CERT} || -z ${OM_CERT_KEY} || -z ${OM_PRIVATE_SSH_KEY} ]]; then
+		echo "Opsman key, cert or private_ssh_key not provided"
 	else
 		echo "$OM_CERT" > /tmp/test.crt
 		echo "$OM_CERT_KEY" > /tmp/test.key
+    echo "${OM_PRIVATE_SSH_KEY}" > /tmp/om_private_ssh_key
+    chmod 400 /tmp/om_private_ssh_key
 
 		echo "Copying new key.."
 		$scp_command /tmp/test.key ubuntu@${OM_TARGET}:/home/ubuntu/tempest1.key
