@@ -72,8 +72,8 @@ function deploy_ova() {
       '.Name = $vmName' \
     merged-options.json > options.json
 
-  if [[ `govc folder.info "GOVC_FOLDER" 2>&1 | grep "GOVC_FOLDER" | awk '{print $2}'` != "GOVC_FOLDER" ]]; then
-    govc folder.create "GOVC_FOLDER"
+  if [[ `govc folder.info "$GOVC_FOLDER" 2>&1 | grep "$GOVC_FOLDER" | awk '{print $2}'` != "$GOVC_FOLDER" ]]; then
+    govc folder.create "$GOVC_FOLDER"
   fi
   govc import.ova -options=options.json $file_path
 
