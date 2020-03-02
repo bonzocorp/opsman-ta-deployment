@@ -59,16 +59,14 @@ groups:
   - <%= env.Name %>-upgrade
 <% } %>
 
-<% if config.HasFeature("slack_updates") { %>
-  - ova-updates
-<% } %>
-
-<% if config.HasFeature("update_deployment") { %>
-- name: update
+- name: apply-director
   jobs:
 <% for _, env := range config.Envs { %>
-  - <%= env.Name %>-update
+  - <%= env.Name %>-apply-director
 <% } %>
+
+<% if config.HasFeature("slack_updates") { %>
+  - ova-updates
 <% } %>
 
 - name: backup
@@ -85,6 +83,14 @@ groups:
 <% for _, env := range config.Envs { %>
   <% if env.HasFeature("restore") { %>
   - <%= env.Name %>-restore
+  <% } %>
+<% } %>
+
+- name: update_certificates
+  jobs:
+<% for _, env := range config.Envs { %>
+  <% if env.HasFeature("update_certificates") { %>
+  - <%= env.Name %>-update-certificates
   <% } %>
 <% } %>
 
@@ -135,7 +141,45 @@ jobs:
       CONCOURSE_PASSWORD: (( grab meta.concourse.password ))
       CONCOURSE_TEAM:     (( grab meta.concourse.team ))
 <% } %>
+
 <% for _, env := range config.Envs { %>
+- name: <%= env.Name %>-apply-director
+  plan:
+  - in_parallel:
+    - get: pipeline
+      <<: *<%= env.Name %>_upgrade_dependencies
+    - get: config
+      resource: <%= env.Name %>-config
+    - get: metadata
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: apply-director
+    file: pipeline/ci/tasks/deploy-director.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
+      DIRECTOR_CONFIG:     (( grab meta.<%= env.Name %>.director_config ))
+      STORE_FILE:          (( grab meta.<%= env.Name %>.store_file ))
+      YAML2VAULT_PREFIX:   (( grab meta.<%= env.Name %>.yaml2vault_prefix ))
+
+      GIT_USERNAME: (( grab meta.git.username ))
+      GIT_EMAIL: (( grab meta.git.email ))
+
+  ensure: &<%= env.Name %>-ensure
+    put: config
+    resource: <%= env.Name %>-config
+    params:
+      repository: config-mod
+      rebase: true
+    on_success:
+      put: lock
+      params:
+        release: lock
+
 - name: <%= env.Name %>-upgrade
   serial: true
   plan:
@@ -407,6 +451,38 @@ jobs:
       LDAP_RBAC_ADMIN_GROUP_NAME: (( grab meta.<%= env.Name %>.ldap_config.ldap_rbac_admin_group_name ))
       LDAP_EMAIL_ATTRIBUTE:       (( grab meta.<%= env.Name %>.ldap_config.ldap_email_attribute ))
       LDAP_REFERRALS:             (( grab meta.<%= env.Name %>.ldap_config.ldap_referrals ))
+  ensure:
+    put: lock
+    params:
+      release: lock
+<% } %>
+
+<% if env.HasFeature("update_certificates") { %>
+- name: <%= env.Name %>-update-certificates
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pipeline
+    - get: config
+      resource: <%= env.Name %>-config
+    - put: lock
+      params:
+        claim: <%= env.Name %>
+  - task: update-certificates
+    file: pipeline/ci/tasks/update-certificates.yml
+    params:
+      OM_TARGET:                  (( grab meta.<%= env.Name %>.om_target ))
+      OM_USERNAME:                (( grab meta.<%= env.Name %>.om_username ))
+      OM_PASSWORD:                (( grab meta.<%= env.Name %>.om_password ))
+      OM_DECRYPTION_PASSWORD:     (( grab meta.<%= env.Name %>.om_decryption_password ))
+      OM_PRIVATE_SSH_KEY:         (( grab meta.<%= env.Name %>.om_private_ssh_key ))
+      OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
+      OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
+      DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
+      CUSTOM_ROOT_CA:             (( grab meta.custom_root_ca || "" ))
+      CUSTOM_INTERMEDIATE_CA:     (( grab meta.custom_intermediate_ca || "" ))
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
   ensure:
     put: lock
     params:

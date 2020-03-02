@@ -7,17 +7,6 @@ set -e
 
 source pipeline/ci/scripts/common.sh
 
-# Extra options to append to the OM command
-om_options=""
-if [[ $OM_SKIP_SSL_VALIDATION == true ]]; then
-  om_options+=" --skip-ssl-validation"
-fi
-if [[ $OM_TRACE == true ]]; then
-  om_options+=" --trace"
-fi
-
-om_options+=" --request-timeout ${OM_REQUEST_TIMEOUT:-3600}"
-
 OUTPUT=output
 mkdir -p $OUTPUT
 
@@ -133,16 +122,6 @@ function commit_config(){
     fi
   popd > /dev/null
 }
-
-# Extra options to append to the OM command
-om_options=""
-if [[ $OM_SKIP_SSL_VALIDATION == true ]]; then
-  om_options+=" --skip-ssl-validation"
-fi
-if [[ $OM_TRACE == true ]]; then
-  om_options+=" --trace"
-fi
-om_options+=" --request-timeout ${OM_REQUEST_TIMEOUT:-3600}"
 
 trap "commit_config" EXIT
 
