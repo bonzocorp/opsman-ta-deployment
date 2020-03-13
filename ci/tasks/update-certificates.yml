@@ -4,8 +4,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: bonzofenix/ci-tools
-    version: v0.1.6
+    repository: bonzofenix/alpine-ci-tools
+    tag: edge
 
 inputs:
   - name: pipeline
