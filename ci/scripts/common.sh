@@ -21,7 +21,7 @@ mkdir -p $OUTPUT
 function load_custom_ca_certs(){
   if [[ ! -z "$CUSTOM_CERTS" ]] ; then
     echo -e "$CUSTOM_CERTS" > custom_certs.crt
-    csplit -k -f /etc/ssl/certs/ custom_certs.crt '/END CERTIFICATE/+1' {10}
+    csplit -k -f /etc/ssl/certs/ -b "%04d.crt" custom_certs.crt '/END CERTIFICATE/+1' '{*}'
   fi
 
   update-ca-certificates
