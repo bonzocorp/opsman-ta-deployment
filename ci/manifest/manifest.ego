@@ -504,6 +504,8 @@ resources:
     uri:         (( grab meta.locks.uri ))
     branch:      (( grab meta.locks.branch || "master" ))
     private_key: (( grab meta.locks.private_key ))
+    username: (( grab meta.configs.username ))
+    password: (( grab meta.configs.password ))
     pool:        (( grab meta.locks.pool ))
 
 - name: metadata
@@ -519,6 +521,8 @@ resources:
     - <%= env.Name %>/director
     branch:      (( grab meta.configs.branch || "master" ))
     private_key: (( grab meta.configs.private_key ))
+    username: (( grab meta.configs.username ))
+    password: (( grab meta.configs.password ))
     uri:         (( grab meta.configs.uri ))
 
 <% if (env.HasFeature("backup") || env.HasFeature("restore")) { %>
@@ -555,6 +559,8 @@ resources:
     - default/<%= config.Name %>/pins.yml
     branch:      (( grab meta.configs.branch || "master" ))
     private_key: (( grab meta.configs.private_key ))
+    username: (( grab meta.configs.username ))
+    password: (( grab meta.configs.password ))
     uri:         (( grab meta.configs.uri ))
 <% } %>
 
