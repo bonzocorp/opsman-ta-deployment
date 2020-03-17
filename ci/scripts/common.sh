@@ -117,4 +117,16 @@ function get_product_guid() {
   | jq -r '.[] | select(.type == "'$PRODUCT_NAME'") | .guid'
 }
 
+function configure_director(){
+  echo "Configuring IaaS and Director..."
+  om -t $OM_TARGET $om_options configure-director \
+    --config                 $OUTPUT/config.json
+}
+
+function generate_config() {
+  log "Generating config files ..."
+
+  spruce merge --prune meta $DIRECTOR_CONFIG $@ | spruce json > $OUTPUT/config.json
+}
+
 load_custom_ca_certs

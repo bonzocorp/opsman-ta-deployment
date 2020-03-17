@@ -1,28 +1,7 @@
 #!/bin/bash
 
-exec >&2
-set -e
-
-[[ "${DEBUG,,}" == "true" ]] && set -x
-
 source pipeline/ci/scripts/common.sh
 
-OUTPUT=output
-mkdir -p $OUTPUT
-
-function log() {
-  green='\033[0;32m'
-  reset='\033[0m'
-
-  echo -e "${green}$1${reset}"
-}
-
-function generate_config() {
-  log "Generating config files ..."
-
-  spruce merge --prune meta $DIRECTOR_CONFIG | spruce json > $OUTPUT/config.json
-
-}
 
 function fetch_opsman_creds() {
   log "Grabbing credentials from opsman"
@@ -125,7 +104,6 @@ function commit_config(){
 
 trap "commit_config" EXIT
 
-load_custom_ca_certs
 generate_config
 configure_director
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
