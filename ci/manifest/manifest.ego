@@ -482,6 +482,7 @@ jobs:
       DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
       DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
       CUSTOM_CERTS:                 (( grab meta.custom_certs || ""))
+      DIRECTOR_CONFIG:     (( grab meta.<%= env.Name %>.director_config ))
   ensure:
     put: lock
     params:
