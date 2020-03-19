@@ -63,6 +63,7 @@ function apply_changes() {
         $om_options \
         curl $CURL_OPTS \
           --path /api/v0/installations \
+          --data '{"deploy_products": "none"}' \
           --request POST | jq -r '.install.id'
     )
 

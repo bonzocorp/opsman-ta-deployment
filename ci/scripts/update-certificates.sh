@@ -1,68 +1,58 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $scripts_dir/common.sh
+
+function enable_new_ca_cert(){
+  local cert_guid=$(cat $OUTPUT/new_ca_cert_guid)
+  om curl -s --path /api/v0/certificate_authorities/$cert_guid/activate \
+    -x POST \
+    -H "Content-Type: application/json" \
+    -d '{}'
+}
+
+function recreate_all_vms(){
+  local deployments=$(bosh deployments --column=name --json | jq '.Tables[0].Rows | .[] | .name' -r)
+
+   for deployment in $deployments; do
+     bosh -d $deployment -n recreate
+   done
+}
 
 function generate_ca(){
-  local generate_ca_response=$(om curl -s --path /api/v0/certificate_authorities/generate" \
-      -X POST \
-      -H "Authorization: Bearer YOUR-UAA-ACCESS-TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{}')
+  local generate_ca_response=$(om curl -s --path /api/v0/certificate_authorities/generate \
+    -x POST \
+    -H "Content-Type: application/json" \
+    -d '{}')
 
-  echo $generate_ca_response | jq '.guid' -r
+  echo $generate_ca_response > $OUTPUT/new_ca_cert_guid
 }
 
 function list_ca_certs() {
   om curl -s --path /api/v0/certificate_authorities
 }
 
-function recreate_director_config(){
-  cat << EOF
-  ---
+function enable_recreate_all(){
+cat << EOF > recreate_all.yml
+---
+properties-configuration:
   director-configuration:
     bosh_recreate_on_next_deploy: true
-  EOF > recreate_all.yml
+EOF
 
-  spruce merge $OUTPUT/config.json recreate_all.yml > $OUTPUT/config.json
+  cp $OUTPUT/config.json $OUTPUT/default_config.json
+  spruce merge $OUTPUT/default_config.json recreate_all.yml | spruce json > $OUTPUT/config.json
 }
 
-new_cert_guid=generate_ca
+generate_ca
 list_ca_certs
 generate_config
 enable_recreate_all
 configure_director
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
   apply_changes
+  recreate_all_vms
+  enable_new_ca_cert
 else
   log "Dry run ... Skipping apply changes"
 fi
-
-#Select the Director Config pane.
-#Select Recreate All VMs. This propagates the new CA to all VMs to prevent downtime.
-#Go back to the Installation Dashboard. For each service tile you have installed:
-#Click the tile.
-#Click the Errands tab.
-#If the service tile has the Recreate All Service Instances errand:
-#Enable the Recreate All Service Instances errand.
-#Click Review Pending Changes, then Apply Changes.
-#If the service tile does not have the Recreate All Service Instances errand:
-#Click Review Pending Changes, then Apply Changes.
-#When the deploy finishes, manually push the BOSH NATS CA to each of its service instances. For each service instance, run:
-#bosh -d SERVICE-INSTANCE-DEPLOYMENT recreate
-#Where SERVICE-INSTANCE-DEPLOYMENT is the BOSH deployment name for the service instance.
-#Continue to the next section, Step 2: Activate the CAs.
-#
-#Step 2: Activate the Root CA
-#
-#To activate the new root CA:
-#
-#Use curl to make an Ops Manager API call that activates the new CA:
-#
-#curl "https://OPS-MAN-FQDN/api/v0/certificate_authorities/CERT-GUID/activate" \
-#  -X POST \
-#  -H "Authorization: Bearer YOUR-UAA-ACCESS-TOKEN" \
-#  -H "Content-Type: application/json" \
-#  -d '{}'
-#Where CERT-GUID is the GUID of your CA that you retrieved in the previous section.
-#
-#The API returns a successful response:
-#HTTP/1.1 200 OK
-#

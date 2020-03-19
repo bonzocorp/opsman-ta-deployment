@@ -90,6 +90,7 @@ groups:
 <% for _, env := range config.Envs { %>
   <% if env.HasFeature("update_certificates") { %>
   - <%= env.Name %>-update-certificates
+  - <%= env.Name %>-check-certificates
   <% } %>
 <% } %>
 
@@ -474,6 +475,10 @@ jobs:
       OM_PRIVATE_SSH_KEY:         (( grab meta.<%= env.Name %>.om_private_ssh_key ))
       OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
       OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
+      BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
+      BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
+      BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
+      BOSH_CA_CERT:       (( grab meta.<%= env.Name %>.bosh_ca_cert ))
       DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
       DEBUG:                      (( grab meta.debug || false ))
       CUSTOM_CERTS:                 (( grab meta.custom_certs || ""))
@@ -481,6 +486,27 @@ jobs:
     put: lock
     params:
       release: lock
+
+- name: <%= env.Name %>-check-certificates
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pipeline
+    - get: config
+      resource: <%= env.Name %>-config
+  - task: check-certificates
+    file: pipeline/ci/tasks/check-certificates.yml
+    params:
+      OM_TARGET:                  (( grab meta.<%= env.Name %>.om_target ))
+      OM_USERNAME:                (( grab meta.<%= env.Name %>.om_username ))
+      OM_PASSWORD:                (( grab meta.<%= env.Name %>.om_password ))
+      OM_DECRYPTION_PASSWORD:     (( grab meta.<%= env.Name %>.om_decryption_password ))
+      OM_PRIVATE_SSH_KEY:         (( grab meta.<%= env.Name %>.om_private_ssh_key ))
+      OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
+      OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
+      DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:                      (( grab meta.debug || false ))
+      CUSTOM_CERTS:                 (( grab meta.custom_certs || ""))
 <% } %>
 <% } %>
 
