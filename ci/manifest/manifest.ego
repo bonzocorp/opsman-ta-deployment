@@ -480,7 +480,7 @@ jobs:
       BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
       BOSH_CA_CERT:       (( grab meta.<%= env.Name %>.bosh_ca_cert ))
       DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
-      DEBUG:                      (( grab meta.debug || false ))
+      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
       CUSTOM_CERTS:                 (( grab meta.custom_certs || ""))
   ensure:
     put: lock
