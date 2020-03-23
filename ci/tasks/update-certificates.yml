@@ -9,6 +9,7 @@ image_resource:
 
 inputs:
   - name: pipeline
+  - name: config
 
 run:
   path: pipeline/ci/scripts/update-certificates.sh

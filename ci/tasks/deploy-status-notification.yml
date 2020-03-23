@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bonzofenix/ubuntu-ci-tools
+    tag: edge
+
+
+inputs:
+  - name: pipeline
+  - name: config
+  - name: metadata
+
+outputs:
+  - name: output      # For debugging purposes, uncommeny
+
+run:
+  path: pipeline/ci/scripts/deploy-status-notification.sh

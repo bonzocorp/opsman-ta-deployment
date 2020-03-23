@@ -264,6 +264,34 @@ jobs:
 
       GIT_USERNAME: (( grab meta.git.username ))
       GIT_EMAIL: (( grab meta.git.email ))
+  <% if config.HasFeature("slack_updates") { %>
+  on_success:
+    do:
+    - task: deploy-status-notification
+      file: pipeline/ci/tasks/deploy-status-notification.yml
+      params:
+        PRODUCT_NAME: <%= config.Name %>
+        BUILD_STATUS: success
+    - put: notify
+      params:
+        channel:  (( grab meta.slack.updates.channel ))
+        username: (( grab meta.slack.username ))
+        icon_url: (( grab meta.slack.success.icon_url ))
+        text_file: output/deploy_status_notification
+  on_failure:
+    do:
+    - task: deploy-status-notification
+      file: pipeline/ci/tasks/deploy-status-notification.yml
+      params:
+        PRODUCT_NAME: <%= config.Name %>
+        BUILD_STATUS: failure
+    - put: notify
+      params:
+        channel:  (( grab meta.slack.updates.channel ))
+        username: (( grab meta.slack.username ))
+        icon_url: (( grab meta.slack.failure.icon_url ))
+        text_file: output/deploy_status_notification
+  <% } %>
 
   ensure: &<%= env.Name %>-ensure
     put: config
@@ -468,21 +496,19 @@ jobs:
   - task: update-certificates
     file: pipeline/ci/tasks/update-certificates.yml
     params:
-      OM_TARGET:                  (( grab meta.<%= env.Name %>.om_target ))
-      OM_USERNAME:                (( grab meta.<%= env.Name %>.om_username ))
-      OM_PASSWORD:                (( grab meta.<%= env.Name %>.om_password ))
-      OM_DECRYPTION_PASSWORD:     (( grab meta.<%= env.Name %>.om_decryption_password ))
-      OM_PRIVATE_SSH_KEY:         (( grab meta.<%= env.Name %>.om_private_ssh_key ))
-      OM_SKIP_SSL_VALIDATION:     (( grab meta.<%= env.Name %>.om_skip_ssl_validation || false ))
-      OM_TRACE:                   (( grab meta.<%= env.Name %>.om_trace || false ))
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
       BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
       BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
       BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
       BOSH_CA_CERT:       (( grab meta.<%= env.Name %>.bosh_ca_cert ))
-      DRY_RUN:                    (( grab meta.<%= env.Name %>.dry_run || false ))
-      DEBUG:                      (( grab meta.<%= env.Name %>.debug || false ))
-      CUSTOM_CERTS:                 (( grab meta.custom_certs || ""))
-      DIRECTOR_CONFIG:     (( grab meta.<%= env.Name %>.director_config ))
+      DRY_RUN:            (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:              (( grab meta.<%= env.Name %>.debug || false ))
+      CUSTOM_CERTS:       (( grab meta.custom_certs || ""))
+      DIRECTOR_CONFIG:    (( grab meta.<%= env.Name %>.director_config ))
   ensure:
     put: lock
     params:
