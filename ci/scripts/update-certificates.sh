@@ -28,7 +28,7 @@ function generate_ca(){
     -H "Content-Type: application/json" \
     -d '{}')
 
-  echo $generate_ca_response > $OUTPUT/new_ca_cert_guid
+  echo $generate_ca_response | jq .guid -r > $OUTPUT/new_ca_cert_guid
 }
 
 function list_ca_certs() {
