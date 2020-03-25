@@ -145,9 +145,7 @@ EOF
 function get_bosh_ca_cert(){
 
   # Gets active root CA cert to use to talk to bosh
-  om curl -s --path /api/v0/certificate_authorities/ | jq '.certificate_authorities | .[] \
-    | select(.active==true) | .cert_pem' -r > $OUTPUT/bosh_ca_cert
-
+  om curl -s --path /api/v0/certificate_authorities/ | jq '.certificate_authorities | .[] | select(.active==true) | .cert_pem' -r > $OUTPUT/bosh_ca_cert
   export BOSH_CA_CERT=$OUTPUT/bosh_ca_cert
 }
 
