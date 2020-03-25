@@ -10,7 +10,7 @@ meta:
     email: (( param "git email for ci bot commits when upgrading secrets" ))
 
 <% if config.HasFeature("slack_updates") { %>
-  slack_updates:
+  slack:
     uri: (( param "Slack integration webhook uri" ))
 <% } %>
 
@@ -91,8 +91,13 @@ groups:
   <% if env.HasFeature("update_certificates") { %>
   - <%= env.Name %>-root-ca
   - <%= env.Name %>-rotate-non-configurable-leaf-certs
-  - <%= env.Name %>-check-certificates
   <% } %>
+<% } %>
+
+- name: check_certificates
+  jobs:
+<% for _, env := range config.Envs { %>
+  - <%= env.Name %>-check-certificates
 <% } %>
 
 - name: ldap
@@ -114,9 +119,9 @@ jobs:
     on_success:
       put: notify
       params:
-        channel:  (( grab meta.slack_updates.channel ))
-        username: (( grab meta.slack_updates.username ))
-        icon_url: (( grab meta.slack_updates.icon_url ))
+        channel:  (( grab meta.slack.updates.channel ))
+        username: (( grab meta.slack.username ))
+        icon_url: (( grab meta.slack.icon_url ))
         text: "New <%= config.Name %> tile available"
 <% } %>
 
@@ -505,7 +510,6 @@ jobs:
       BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
       BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
       BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
-      BOSH_CA_CERT:       (( grab meta.<%= env.Name %>.bosh_ca_cert ))
       DRY_RUN:            (( grab meta.<%= env.Name %>.dry_run || false ))
       DEBUG:              (( grab meta.<%= env.Name %>.debug || false ))
       CUSTOM_CERTS:       (( grab meta.custom_certs || ""))
@@ -538,7 +542,7 @@ jobs:
   plan:
   - in_parallel:
     - get: pipeline
-      depends_on:
+      passed:
       - <%= env.Name %>-root-ca
     - get: config
       resource: <%= env.Name %>-config
@@ -556,7 +560,6 @@ jobs:
       BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
       BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
       BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
-      BOSH_CA_CERT:       (( grab meta.<%= env.Name %>.bosh_ca_cert ))
       DRY_RUN:            (( grab meta.<%= env.Name %>.dry_run || false ))
       DEBUG:              (( grab meta.<%= env.Name %>.debug || false ))
       CUSTOM_CERTS:       (( grab meta.custom_certs || ""))

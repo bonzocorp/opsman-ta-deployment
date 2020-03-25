@@ -142,4 +142,23 @@ EOF
   spruce merge $OUTPUT/default_config.json recreate_all.yml | spruce json > $OUTPUT/config.json
 }
 
+function get_bosh_ca_cert(){
+
+  # Gets active root CA cert to use to talk to bosh
+  om curl -s --path /api/v0/certificate_authorities/ \
+    | jq '.certificate_authorities | .[] \
+    | select(.active==true) | .cert_pem' -r > $output/bosh_ca_cert
+
+  export BOSH_CA_CERT=$output/bosh_ca_cert
+}
+
+function recreate_all_vms(){
+  get_bosh_ca_cert
+
+  local deployments=$(bosh deployments --column=name --json | jq '.Tables[0].Rows | .[] | .name' -r)
+  for deployment in $deployments; do
+    bosh -d $deployment -n recreate
+  done
+}
+
 load_custom_ca_certs

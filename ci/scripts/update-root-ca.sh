@@ -11,14 +11,6 @@ function enable_new_ca_cert(){
     -d '{}'
 }
 
-function recreate_all_vms(){
-  local deployments=$(bosh deployments --column=name --json | jq '.Tables[0].Rows | .[] | .name' -r)
-
-   for deployment in $deployments; do
-     bosh -d $deployment -n recreate
-   done
-}
-
 function generate_ca(){
   local generate_ca_response=$(om curl -s --path /api/v0/certificate_authorities/generate \
     -x POST \
@@ -26,6 +18,7 @@ function generate_ca(){
     -d '{}')
 
   echo $generate_ca_response | jq .guid -r > $OUTPUT/new_ca_cert_guid
+
 }
 
 function list_ca_certs() {
