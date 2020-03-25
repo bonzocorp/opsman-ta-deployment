@@ -12,4 +12,4 @@ inputs:
   - name: config
 
 run:
-  path: pipeline/ci/scripts/update-certificates.sh
+  path: pipeline/ci/scripts/rotate-non-configurable-leaf-certs.sh

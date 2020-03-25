@@ -130,4 +130,16 @@ function generate_config() {
   spruce merge --prune meta $DIRECTOR_CONFIG $@ | spruce json > $OUTPUT/config.json
 }
 
+function enable_director_recreate_all(){
+cat << EOF > recreate_all.yml
+---
+properties-configuration:
+  director-configuration:
+    bosh_recreate_on_next_deploy: true
+EOF
+
+  cp $OUTPUT/config.json $OUTPUT/default_config.json
+  spruce merge $OUTPUT/default_config.json recreate_all.yml | spruce json > $OUTPUT/config.json
+}
+
 load_custom_ca_certs
