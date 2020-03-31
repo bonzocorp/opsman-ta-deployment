@@ -31,7 +31,7 @@ generate_config
 enable_director_recreate_all
 configure_director
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
-  apply_changes
+  apply_changes "all"
   recreate_all_vms
   enable_new_ca_cert
 else

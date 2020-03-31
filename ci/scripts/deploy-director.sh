@@ -59,13 +59,6 @@ function sanitize_opsman_creds() {
   yaml2vault -f $OUTPUT/store.yml -p $YAML2VAULT_PREFIX > ${OUTPUT}/sanitized-store.yml
 }
 
-function apply_changes(){
-  echo "Applying changes in Opsman"
-  om -t $OM_TARGET \
-    $om_options \
-    apply-changes \
-      --skip-deploy-products
-}
 
 function configure_director(){
 

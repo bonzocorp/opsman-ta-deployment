@@ -52,11 +52,10 @@ function check_if_exists(){
 }
 
 function apply_changes() {
-  product_guid="$(get_product_guid)"
+  products=$1
 
-  installation_id=""
-  if [ -z "$product_guid" ];then
-    log "Applying changes"
+  if [ -z "$products" ];then
+    log "Applying changes to director only"
 
     installation_id=$(
       om -t $OM_TARGET \
@@ -66,16 +65,15 @@ function apply_changes() {
           --data '{"deploy_products": "none"}' \
           --request POST | jq -r '.install.id'
     )
-
   else
-    log "Applying changes on $product_guid"
+    log "Applying changes to all products"
     installation_id=$(
       om -t $OM_TARGET \
         $om_options \
         curl \
           --path /api/v0/installations \
           --request POST \
-          --data '{"deploy_products": ["'$product_guid'"]}' \
+          --data '{"deploy_products": "all"}' \
       | jq -r '.install.id'
     )
 
@@ -108,14 +106,6 @@ function get_installation_status() {
       --path /api/v0/installations/$id \
     2>/dev/null \
   | jq -r '.status'
-}
-
-function get_product_guid() {
-  om -t $OM_TARGET \
-    $om_options \
-    curl \
-      --path /api/v0/staged/products \
-  | jq -r '.[] | select(.type == "'$PRODUCT_NAME'") | .guid'
 }
 
 function configure_director(){
