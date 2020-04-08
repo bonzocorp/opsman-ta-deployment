@@ -97,6 +97,14 @@ function apply_changes() {
   fi
 }
 
+function get_product_guid() {
+  om -t $OM_TARGET \
+    $om_options \
+    curl \
+      --path /api/v0/staged/products \
+  | jq -r '.[] | select(.type == "'$PRODUCT_NAME'") | .guid'
+}
+
 function get_installation_status() {
   local id="$1"
 
