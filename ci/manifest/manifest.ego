@@ -89,7 +89,9 @@ groups:
   jobs:
 <% for _, env := range config.Envs { %>
   <% if env.HasFeature("update_certificates") { %>
-  - <%= env.Name %>-root-ca
+  - <%= env.Name %>-create-root-ca
+  - <%= env.Name %>-activate-root-ca
+  - <%= env.Name %>-redeploy-all
   - <%= env.Name %>-rotate-non-configurable-leaf-certs
   <% } %>
 <% } %>
@@ -489,7 +491,7 @@ jobs:
 <% } %>
 
 <% if env.HasFeature("update_certificates") { %>
-- name: <%= env.Name %>-root-ca
+- name: <%= env.Name %>-create-root-ca
   serial: true
   plan:
   - in_parallel:
@@ -499,8 +501,63 @@ jobs:
     - put: lock
       params:
         claim: <%= env.Name %>
-  - task: update-root-ca
-    file: pipeline/ci/tasks/update-root-ca.yml
+  - task: create-root-ca
+    file: pipeline/ci/tasks/certs/create-root-ca.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
+      BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
+      BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
+      BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
+      DRY_RUN:            (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:              (( grab meta.<%= env.Name %>.debug || false ))
+      CUSTOM_CERTS:       (( grab meta.custom_certs || ""))
+      DIRECTOR_CONFIG:    (( grab meta.<%= env.Name %>.director_config ))
+- name: <%= env.Name %>-redeploy-all
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pipeline
+      passed:
+      - <%= env.Name %>-create-root-ca
+    - get: config
+      resource: <%= env.Name %>-config
+  - task: redeploy-all
+    file: pipeline/ci/tasks/certs/redeploy-all.yml
+    params:
+      <<: *<%= env.Name %>_om_config
+      VAULT_ADDR:       (( grab meta.vault.address ))
+      VAULT_TOKEN:      (( grab meta.vault.token ))
+      VAULT_SKIP_VERIFY:   (( grab meta.vault.skip_verify || true ))
+      PRODUCT_NAME:     (( grab meta.product_name ))
+      BOSH_CLIENT:        (( grab meta.<%= env.Name %>.bosh_client))
+      BOSH_CLIENT_SECRET: (( grab meta.<%= env.Name %>.bosh_client_secret))
+      BOSH_ENVIRONMENT:   (( grab meta.<%= env.Name %>.bosh_environment))
+      DRY_RUN:            (( grab meta.<%= env.Name %>.dry_run || false ))
+      DEBUG:              (( grab meta.<%= env.Name %>.debug || false ))
+      CUSTOM_CERTS:       (( grab meta.custom_certs || ""))
+      DIRECTOR_CONFIG:          (( grab meta.<%= env.Name %>.director_config ))
+      PENDING_PRODUCTS_FILE:    (( grab meta.<%= env.Name %>.pending_products_file ))
+  ensure: &<%= env.Name %>-ensure
+    put: config
+    resource: <%= env.Name %>-config
+    params:
+      repository: config-mod
+      rebase: true
+- name: <%= env.Name %>-activate-root-ca
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pipeline
+      passed:
+      - <%= env.Name %>-redeploy-all
+    - get: config
+      resource: <%= env.Name %>-config
+  - task: activate-root-ca
+    file: pipeline/ci/tasks/certs/activate-root-ca.yml
     params:
       <<: *<%= env.Name %>_om_config
       VAULT_ADDR:       (( grab meta.vault.address ))
@@ -543,7 +600,7 @@ jobs:
   - in_parallel:
     - get: pipeline
       passed:
-      - <%= env.Name %>-root-ca
+      - <%= env.Name %>-create-root-ca
     - get: config
       resource: <%= env.Name %>-config
     - put: lock
@@ -702,7 +759,7 @@ resources:
 - name: notify
   type: slack-notification
   source:
-    url: (( grab meta.slack_updates.uri || "" ))
+    url: (( grab meta.slack.uri || "" ))
 <% } %>
 
 resource_types:

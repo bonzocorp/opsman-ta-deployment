@@ -52,49 +52,13 @@ function check_if_exists(){
 }
 
 function apply_changes() {
-  products=$1
+  product_name=$1
 
   if [ -z "$products" ];then
     log "Applying changes to director only"
-
-    installation_id=$(
-      om -t $OM_TARGET \
-        $om_options \
-        curl $CURL_OPTS \
-          --path /api/v0/installations \
-          --data '{"deploy_products": "none"}' \
-          --request POST | jq -r '.install.id'
-    )
-  else
-    log "Applying changes to all products"
-    installation_id=$(
-      om -t $OM_TARGET \
-        $om_options \
-        curl \
-          --path /api/v0/installations \
-          --request POST \
-          --data '{"deploy_products": "all"}' \
-      | jq -r '.install.id'
-    )
-
-  fi
-  log "Watching installation $installation_id"
-
-  status=$( get_installation_status $installation_id )
-  while [[ $status == 'running' ]]; do
-    echo -n '.'
-    sleep 1
-
-    status=$( get_installation_status $installation_id )
-  done
-
-  echo "Installation $installation_id $status!"
-  echo "You can view logs at https://$OM_TARGET/installation_logs/$installation_id"
-  if [[ $status == succeeded ]]; then
-    return 0
-  else
-    return 1
-  fi
+   om apply-changes  \
+      -c $OUTPUT/errands.yml \
+      --product-name $product_name
 }
 
 function get_product_guid() {
@@ -154,6 +118,10 @@ function recreate_all_vms(){
   for deployment in $deployments; do
     bosh -d $deployment -n recreate
   done
+}
+
+function list_ca_certs() {
+  om curl -s --path /api/v0/certificate_authorities
 }
 
 load_custom_ca_certs
