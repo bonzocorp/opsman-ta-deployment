@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $scripts_dir/common.sh
+source $scripts_dir/../common.sh
 
 function find_or_create_pending_products() {
   if [[ ! -s "$PENDING_PRODUCTS_FILE" ]] ; then

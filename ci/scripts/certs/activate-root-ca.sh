@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $scripts_dir/common.sh
+source $scripts_dir/../common.sh
 
 function enable_new_ca_cert(){
   list_ca_certs > all_certs.json
