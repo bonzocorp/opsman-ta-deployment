@@ -55,9 +55,9 @@ function apply_changes() {
   product_name=$1
 
    log "Applying changes to director only"
-   om apply-changes  \
+   om apply-changes \
       -c $OUTPUT/errands.yml \
-      --product-name $product_name
+      --product-name $product_name ${@:2}
 
 }
 

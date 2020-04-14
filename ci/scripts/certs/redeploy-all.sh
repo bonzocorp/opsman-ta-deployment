@@ -55,7 +55,7 @@ local pending_products=$(cat $PENDING_PRODUCTS_FILE)
 
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
   for product_name in $pending_products[@]; do
-    apply_changes $product_name
+    apply_changes $product_name --recreate-vms
     remove_from_pending_products $product_name
   done
   # recreate_all_service_instances_vms
