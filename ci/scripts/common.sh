@@ -22,8 +22,8 @@ function load_custom_ca_certs(){
   if [[ ! -z "$CUSTOM_CERTS" ]] ; then
     echo -e "$CUSTOM_CERTS" > custom_certs.crt
     csplit -k -f /etc/ssl/certs/ -b "%04d.crt" custom_certs.crt '/END CERTIFICATE/+1' '{*}'
-    update-ca-certificates
   fi
+  update-ca-certificates
 }
 
 function log() {
