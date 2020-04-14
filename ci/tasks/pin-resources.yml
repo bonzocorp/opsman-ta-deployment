@@ -5,8 +5,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: bonzofenix/ci-tools
-    tag: edge
+    repository: bonzofenix/alpine-ci-tools
+    tag: v0.0.6
 
 inputs:
   - name: config
