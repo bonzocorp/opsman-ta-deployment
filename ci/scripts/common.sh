@@ -54,11 +54,11 @@ function check_if_exists(){
 function apply_changes() {
   product_name=$1
 
-  if [ -z "$products" ];then
-    log "Applying changes to director only"
+   log "Applying changes to director only"
    om apply-changes  \
       -c $OUTPUT/errands.yml \
       --product-name $product_name
+
 }
 
 function get_product_guid() {

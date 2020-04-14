@@ -100,7 +100,7 @@ trap "commit_config" EXIT
 generate_config
 configure_director
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
-  apply_changes
+  apply_changes p-bosh
   fetch_opsman_creds
   sanitize_opsman_creds
 else
