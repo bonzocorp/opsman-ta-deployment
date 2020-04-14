@@ -51,7 +51,7 @@ enable_director_recreate_all
 configure_director
 find_or_create_pending_products
 
-local pending_products=$(cat $PENDING_PRODUCTS_FILE)
+pending_products=$(cat $PENDING_PRODUCTS_FILE)
 
 if [[ "${DRY_RUN,,}" != "true" ]] ; then
   for product_name in $pending_products[@]; do
