@@ -49,7 +49,7 @@ trap "commit_config" EXIT
 generate_config
 enable_director_recreate_all
 configure_director
-find_create_pending_products
+find_or_create_pending_products
 
 local pending_products=$(cat $PENDING_PRODUCTS_FILE)
 
