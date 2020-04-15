@@ -44,24 +44,29 @@ function commit_config(){
   popd > /dev/null
 }
 
+function redeploy_all_pending_products(){
+  local pending_products=$(cat $PENDING_PRODUCTS_FILE)
+
+  if [[ "${DRY_RUN,,}" != "true" ]] ; then
+    for product_name in $pending_products[@]; do
+      apply_changes $product_name --recreate-vms
+      remove_from_pending_products $product_name
+    done
+    # recreate_all_service_instances_vms
+  else
+    log "Dry run ... Skipping apply changes"
+  fi
+
+  rm $PENDING_PRODUCTS_FILE
+}
+
+
 trap "commit_config" EXIT
 
 generate_config
 enable_director_recreate_all
 configure_director
 find_or_create_pending_products
-
-pending_products=$(cat $PENDING_PRODUCTS_FILE)
-
-if [[ "${DRY_RUN,,}" != "true" ]] ; then
-  for product_name in $pending_products[@]; do
-    apply_changes $product_name --recreate-vms
-    remove_from_pending_products $product_name
-  done
-  # recreate_all_service_instances_vms
-else
-  log "Dry run ... Skipping apply changes"
-fi
-
-delete_pending_products
-rm $PENDING_PRODUCTS_FILE
+remove_from_pending_products p-bosh
+apply_changes p-bosh --recreate-vms
+redeploy_all_pending_products
