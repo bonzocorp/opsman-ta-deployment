@@ -10,6 +10,7 @@ image_resource:
 inputs:
   - name: pipeline
   - name: config
+  - name: metadata
 
 outputs:
   - name: output
