@@ -88,7 +88,7 @@ function configure_director(){
 function generate_config() {
   log "Generating config files ..."
 
-  spruce merge --prune meta $DIRECTOR_CONFIG $@ | spruce json > $OUTPUT/config.json
+  spruce merge --prune meta $DIRECTOR_CONFIG $@ 2>/dev/null | spruce json 2>/dev/null  > $OUTPUT/config.json
 }
 
 function enable_director_recreate_all(){
@@ -100,7 +100,7 @@ properties-configuration:
 EOF
 
   cp $OUTPUT/config.json $OUTPUT/default_config.json
-  spruce merge $OUTPUT/default_config.json recreate_all.yml | spruce json > $OUTPUT/config.json
+  spruce merge $OUTPUT/default_config.json recreate_all.yml 2>/dev/null  | spruce json 2>/dev/null > $OUTPUT/config.json
 }
 
 function get_bosh_ca_cert(){

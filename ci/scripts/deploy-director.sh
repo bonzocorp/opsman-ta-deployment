@@ -38,7 +38,7 @@ function fetch_opsman_creds() {
       curl \
         --path /api/v0/deployed/products/$product_guid/credentials/$cred \
     | jq '.' \
-    | spruce merge \
+    | spruce merge 2>/dev/null \
     > $tmp/vars.yml
 
 		# Update the creds file with the value needed

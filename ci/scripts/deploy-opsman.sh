@@ -66,7 +66,7 @@ function deploy_ova() {
   echo "options.json file for version $version:"
   govc import.spec $file_path  | jq .
 
-  spruce merge --prune meta $CONFIG_FILES | spruce json > merged-options.json
+  spruce merge --prune meta $CONFIG_FILES 2>/dev/null | spruce 2>/dev/null json > merged-options.json
 
   jq --arg vmName opsman-"$version" \
       '.Name = $vmName' \
