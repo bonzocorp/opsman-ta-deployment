@@ -85,21 +85,27 @@ groups:
   <% } %>
 <% } %>
 
-- name: update_certificates
+<% if config.HasFeature("update_certificates") { %>
+- name: update_root_certificates
   jobs:
 <% for _, env := range config.Envs { %>
-  <% if env.HasFeature("update_certificates") { %>
   - <%= env.Name %>-create-root-ca
   - <%= env.Name %>-activate-root-ca
   - <%= env.Name %>-redeploy-all
-  - <%= env.Name %>-rotate-non-configurable-leaf-certs
-  <% } %>
 <% } %>
+
+- name: update_non_configurable_leaf_certificates
+  jobs:
+<% for _, env := range config.Envs { %>
+  - <%= env.Name %>-rotate-non-configurable-leaf-certs
+  - <%= env.Name %>-redeploy-all
+  <% } %>
 
 - name: check_certificates
   jobs:
 <% for _, env := range config.Envs { %>
   - <%= env.Name %>-check-certificates
+<% } %>
 <% } %>
 
 - name: ldap
@@ -490,7 +496,7 @@ jobs:
       release: lock
 <% } %>
 
-<% if env.HasFeature("update_certificates") { %>
+<% if config.HasFeature("update_certificates") { %>
 - name: <%= env.Name %>-create-root-ca
   serial: true
   plan:
@@ -525,6 +531,7 @@ jobs:
       - <%= env.Name %>-create-root-ca
     - get: config
       resource: <%= env.Name %>-config
+    - get: metadata
   - task: redeploy-all
     file: pipeline/ci/tasks/certs/redeploy-all.yml
     params:
