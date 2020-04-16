@@ -28,7 +28,7 @@ function commit_config(){
   if [[ -s $PENDING_PRODUCTS_FILE ]]; then
     log "Adding pending redeploy products file"
 
-    cp $PENDING_PRODUCTS_FILE  ${PENDING_PRODUCTS_FILE /config/config-mod}
+    cp $PENDING_PRODUCTS_FILE  ${PENDING_PRODUCTS_FILE/config/config-mod}
     git -C config-mod add $PENDING_PRODUCTS_FILE
   fi
 
