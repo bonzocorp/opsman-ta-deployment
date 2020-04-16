@@ -12,7 +12,7 @@ function find_or_create_pending_products() {
 }
 
 function remove_from_pending_products() {
-  sed "/$1/d" $PENDING_PRODUCTS_FILE
+  sed -i "/$1/d" $PENDING_PRODUCTS_FILE
 }
 
 function commit_config(){
@@ -64,9 +64,9 @@ function redeploy_all_pending_products(){
 trap "commit_config" EXIT
 
 generate_config
-enable_director_recreate_all
 configure_director
 find_or_create_pending_products
 remove_from_pending_products p-bosh
+enable_director_recreate_all
 apply_changes p-bosh --recreate-vms
 redeploy_all_pending_products
