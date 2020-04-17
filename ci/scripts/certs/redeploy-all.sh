@@ -29,7 +29,7 @@ function commit_config(){
     log "Adding pending redeploy products file"
 
     cp $PENDING_PRODUCTS_FILE  ${PENDING_PRODUCTS_FILE/config/config-mod}
-    git -C config-mod add $PENDING_PRODUCTS_FILE
+    git -C config-mod add ${PENDING_PRODUCTS_FILE/config\//}
   fi
 
   pushd config-mod > /dev/null
