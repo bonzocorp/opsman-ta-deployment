@@ -64,8 +64,7 @@ function configure_director(){
 
   echo "Configuring IaaS and Director..."
   om -t $OM_TARGET $om_options configure-director \
-    --config                 $OUTPUT/config.json \
-    --ignore-verifier-warnings=true
+    --config                 $OUTPUT/config.json
 }
 
 function commit_config(){
